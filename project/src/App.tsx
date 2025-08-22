@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { MessageSquare, Type } from 'lucide-react';
 import Header from './components/layout/Header';
 import GaneshaRotatingAvatar from './components/layout/GaneshaRotatingAvatar';
@@ -6,14 +6,16 @@ import ChatContainer from './components/chat/ChatContainer';
 import VoiceButton from './components/ui/VoiceButton';
 import LanguageSelector from './components/ui/LanguageSelector';
 import ParticleSystem from './components/ui/ParticleSystem';
-import SacredGeometry from './components/ui/SacredGeometry';
-import LoadingSpinner from './components/ui/LoadingSpinner';
+import NebulaBackground, { type NebulaBackgroundHandle } from './components/ui/NebulaBackground';
 import useVoiceRecognition from './hooks/useVoiceRecognition';
 import { ChatMessage, SupportedLanguage, UIState } from './types';
+import { chatAPI, ttsAPI, playAudioBlob, type HistoryItem } from './services/api';
 
 function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>('en');
+  const [started, setStarted] = useState(false);
+  const nebulaRef = useRef<NebulaBackgroundHandle>(null);
   const [uiState, setUIState] = useState<UIState>({
     isLoading: false,
     currentLanguage: 'en',
@@ -24,62 +26,72 @@ function App() {
   const [showTextInput, setShowTextInput] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
 
-  // Simulated API call to Ganesha chatbot
+  // Session id persisted in localStorage for continuity (frontend-managed)
+  const [sessionId] = useState<string>(() => {
+    const key = 'ganesha_session_id';
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const sid = `sess_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+    localStorage.setItem(key, sid);
+    return sid;
+  });
+
+  // Build history for backend (map UI messages to role/content)
+  const buildHistory = useCallback((limit: number = 8): HistoryItem[] => {
+    const recent = messages.slice(-limit);
+    const hist: HistoryItem[] = recent
+      .filter(m => !!m.content)
+      .map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: m.content }));
+    return hist;
+  }, [messages]);
+
+  // Real API call to chatbot + TTS playback
   const sendMessageToGanesha = useCallback(async (message: string, language: SupportedLanguage) => {
     setUIState(prev => ({ ...prev, isLoading: true }));
     setIsResponding(true);
-    
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
-      
-      // Simulated responses based on language
-      const responses = {
-        en: [
-          "🙏 Namaste, dear devotee. I am here to guide you on your spiritual journey. What weighs upon your heart today?",
-          "✨ May my blessings remove all obstacles from your path. How can I assist you in finding peace and wisdom?",
-          "🐘 As the remover of obstacles, I sense your sincere devotion. What guidance do you seek, my child?",
-          "🌸 Your prayers have reached me. I am here to shower you with wisdom and divine grace. Speak freely.",
-          "🕉️ Om Gam Ganapataye Namaha. I feel your spiritual energy. What brings you to seek my counsel today?"
-        ],
-        hi: [
-          "🙏 नमस्ते भक्त। मैं यहाँ आपकी आध्यात्मिक यात्रा में मार्गदर्शन करने के लिए हूँ।",
-          "✨ मेरा आशीर्वाद आपके सभी विघ्नों को दूर करे। आज आप कैसी सहायता चाहते हैं?",
-          "🐘 विघ्न हर्ता के रूप में, मैं आपकी भक्ति को महसूस करता हूँ। क्या सलाह चाहिए?",
-          "🌸 आपकी प्रार्थना मुझ तक पहुँची है। मैं आपको ज्ञान और कृपा देने यहाँ हूँ।",
-          "🕉️ ॐ गं गणपतये नमः। आपकी आध्यात्मिक ऊर्जा महसूस होती है।"
-        ]
-      };
 
-      const languageResponses = responses[language] || responses.en;
-      const response = languageResponses[Math.floor(Math.random() * languageResponses.length)];
-      
+    try {
+      const chatRes = await chatAPI({
+        text: message,
+        language,
+        history: buildHistory(8),
+        context: { sessionId: sessionId },
+        temperature: 0.6,
+      });
+
       const ganeshaMessage: ChatMessage = {
         id: Date.now().toString() + '-ganesha',
         type: 'ganesha',
-        content: response,
+        content: chatRes.text,
         timestamp: new Date(),
-        language
+        language: chatRes.language as SupportedLanguage,
       };
-      
       setMessages(prev => [...prev, ganeshaMessage]);
+
+      // Auto TTS playback of assistant reply
+      try {
+        const audioBlob = await ttsAPI({ text: chatRes.text, language });
+        playAudioBlob(audioBlob);
+      } catch (e) {
+        // Non-fatal if TTS fails
+        console.warn('TTS playback failed:', e);
+      }
     } catch (error) {
-      console.error('Error sending message to Ganesha:', error);
-      
+      console.error('Error sending message to backend:', error);
+
       const errorMessage: ChatMessage = {
         id: Date.now().toString() + '-error',
         type: 'ganesha',
-        content: "🙏 I apologize, dear devotee. There seems to be a temporary disruption in our divine connection. Please try again in a moment.",
+        content: '🙏 Sorry, the connection is busy. Please try again shortly.',
         timestamp: new Date(),
-        language: 'en'
+        language: 'en',
       };
-      
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setUIState(prev => ({ ...prev, isLoading: false }));
       setIsResponding(false);
     }
-  }, []);
+  }, [buildHistory, sessionId]);
 
   const handleVoiceTranscript = useCallback((transcript: string) => {
     if (!transcript.trim()) return;
@@ -114,7 +126,20 @@ function App() {
     setShowTextInput(false);
   }, [textInput, currentLanguage, sendMessageToGanesha]);
 
-  const { voiceState, toggleListening } = useVoiceRecognition(handleVoiceTranscript, currentLanguage);
+  const bcp47 = useMemo(() => {
+    const map: Record<string, string> = {
+      en: 'en-US', hi: 'hi-IN', ta: 'ta-IN', te: 'te-IN', mr: 'mr-IN', gu: 'gu-IN'
+    };
+    return map[currentLanguage] || 'en-US';
+  }, [currentLanguage]);
+  const { voiceState, toggleListening } = useVoiceRecognition(handleVoiceTranscript, bcp47);
+
+  const handleMicToggle = useCallback(() => {
+    // Trigger cosmic ripple and mark experience as started
+    nebulaRef.current?.triggerRipple();
+    if (!started) setStarted(true);
+    toggleListening();
+  }, [started, toggleListening]);
 
   const handleLanguageChange = useCallback((language: SupportedLanguage) => {
     setCurrentLanguage(language);
@@ -126,20 +151,18 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Background gradient */}
-      <div className="fixed inset-0 bg-gradient-to-br from-saffron-400 via-gold-500 to-crimson-600" />
-      
-      {/* Sacred geometry background */}
-      <div className="fixed inset-0 opacity-20">
-        <SacredGeometry pattern="mandala" size={600} opacity={0.1} rotating />
-        <div className="absolute top-1/4 left-1/4">
-          <SacredGeometry pattern="lotus" size={200} opacity={0.15} />
+    <div className="min-h-screen relative overflow-hidden text-white" style={{ backgroundColor: '#010005' }}>
+      {/* Three.js Nebula background */}
+      <NebulaBackground ref={nebulaRef} />
+
+      {/* Intro overlay (hidden after mic pressed) */}
+      {!started && (
+        <div className="fixed inset-0 z-10 flex items-center justify-center text-center px-6">
+          <div className="max-w-2xl">
+            
+          </div>
         </div>
-        <div className="absolute bottom-1/4 right-1/4">
-          <SacredGeometry pattern="yantra" size={250} opacity={0.1} rotating />
-        </div>
-      </div>
+      )}
       
       {/* Particle system */}
       <ParticleSystem 
@@ -161,19 +184,21 @@ function App() {
           <GaneshaRotatingAvatar />
         </div>
         
-        {/* Chat section */}
-        <div className="flex-1 max-w-4xl mx-auto w-full px-4">
-          <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-gold-200 min-h-[400px] flex flex-col">
-            <ChatContainer 
-              messages={messages} 
-              isLoading={uiState.isLoading}
-            />
+        {/* Chat section - hidden until started (so the white box won't appear initially) */}
+        {started && (
+          <div className="max-w-4xl mx-auto w-full px-4 mt-[40vh]">
+            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-gold-200 min-h-[300px] flex flex-col">
+              <ChatContainer 
+                messages={messages} 
+                isLoading={uiState.isLoading}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
       
       {/* Input controls */}
-      <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-20">
+      <div className="fixed bottom-28 left-1/2 transform -translate-x-1/2 z-20">
         <div className="flex flex-col items-center space-y-4">
           {/* Text input */}
           {showTextInput && (
@@ -218,7 +243,7 @@ function App() {
               isListening={voiceState.isListening}
               isProcessing={voiceState.isProcessing}
               audioLevel={voiceState.audioLevel}
-              onToggleListening={toggleListening}
+              onToggleListening={handleMicToggle}
               disabled={uiState.isLoading}
             />
           </div>

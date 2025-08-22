@@ -66,7 +66,7 @@ const GaneshaRotatingAvatar: React.FC = () => {
             </g>
           </g>
         </svg>
-        
+
         {/* Second rotating circle */}
         <img 
           className="img_two rotate-center-sec" 
