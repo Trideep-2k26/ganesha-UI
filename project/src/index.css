@@ -1,0 +1,222 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&family=Noto+Sans+Gujarati:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom color variables */
+:root {
+  --saffron-50: #fef7ed;
+  --saffron-100: #fdedd3;
+  --saffron-200: #fad8a6;
+  --saffron-300: #f6bc6e;
+  --saffron-400: #ff9933;
+  --saffron-500: #ea7c1e;
+  --saffron-600: #dc5f14;
+  --saffron-700: #b64614;
+  --saffron-800: #923818;
+  --saffron-900: #782f16;
+  
+  --gold-50: #fefcf3;
+  --gold-100: #fef5e7;
+  --gold-200: #fde8c4;
+  --gold-300: #fbd395;
+  --gold-400: #daa520;
+  --gold-500: #ca8a04;
+  --gold-600: #a16207;
+  --gold-700: #854d0e;
+  --gold-800: #713f12;
+  --gold-900: #633717;
+  
+  --crimson-50: #fef2f2;
+  --crimson-100: #fee2e2;
+  --crimson-200: #fecaca;
+  --crimson-300: #fca5a5;
+  --crimson-400: #f87171;
+  --crimson-500: #dc143c;
+  --crimson-600: #dc2626;
+  --crimson-700: #b91c1c;
+  --crimson-800: #991b1b;
+  --crimson-900: #7f1d1d;
+  
+  --ivory-50: #fffff0;
+  --ivory-100: #fefdf9;
+  --ivory-200: #fefbf3;
+  --ivory-300: #fdf8ed;
+  --ivory-400: #fcf5e7;
+  --ivory-500: #fbf2e1;
+  --ivory-600: #f9efdb;
+  --ivory-700: #f7ecd5;
+  --ivory-800: #f5e9cf;
+  --ivory-900: #f3e6c9;
+}
+
+/* Custom animations */
+@keyframes gentle-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(255, 153, 51, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 30px rgba(255, 153, 51, 0.6);
+  }
+}
+
+@keyframes gentle-glow {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(255, 153, 51, 0.3),
+      0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 40px rgba(255, 153, 51, 0.5),
+      0 15px 25px rgba(0, 0, 0, 0.2);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animation classes */
+.animate-gentle-pulse {
+  animation: gentle-pulse 3s ease-in-out infinite;
+}
+
+.animate-gentle-glow {
+  animation: gentle-glow 2s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 30s linear infinite;
+}
+
+/* Custom scrollbar */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Focus styles */
+*:focus {
+  outline: none;
+}
+
+/* Button hover effects */
+.btn-sacred {
+  @apply relative overflow-hidden transition-all duration-300 transform;
+}
+
+.btn-sacred::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  transition: width 0.4s, height 0.4s, top 0.4s, left 0.4s;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.btn-sacred:hover::before {
+  width: 200px;
+  height: 200px;
+}
+
+/* Typography */
+.font-devanagari {
+  font-family: 'Noto Sans Devanagari', sans-serif;
+}
+
+.font-tamil {
+  font-family: 'Noto Sans Tamil', sans-serif;
+}
+
+.font-telugu {
+  font-family: 'Noto Sans Telugu', sans-serif;
+}
+
+.font-gujarati {
+  font-family: 'Noto Sans Gujarati', sans-serif;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .mobile-optimized {
+    @apply px-4 py-2;
+  }
+  
+  .touch-target {
+    @apply min-w-[44px] min-h-[44px];
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --saffron-400: #ff6600;
+    --gold-400: #cc8800;
+    --crimson-500: #cc0000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --saffron-400: #ff9933;
+    --gold-400: #daa520;
+    --crimson-500: #dc143c;
+  }
+}

@@ -1,0 +1,183 @@
+.ganesh-avatar-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  margin: 2rem 0;
+}
+
+.divset {
+  overflow: hidden;
+  height: 800px;
+  width: 800px;
+  margin: -20px auto;
+  position: relative;
+}
+
+.rotate-center {
+  -webkit-animation: rotate-center 4s linear infinite both;
+  animation: rotate-center 4s linear infinite both;
+  -webkit-transform-origin: center center;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.img_one {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  width: 700px;
+  height: 700px;
+  margin-top: -250px;
+  margin-left: -250px;
+}
+
+.img_two {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 530px;
+  height: 530px;
+  margin-top: -258px;
+  margin-left: -268px;
+}
+
+.img_three {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 470px;
+  height: 470px;
+  margin-top: -220px;
+  margin-left: -233px;
+}
+
+.rotate-center-sec {
+  -webkit-animation: rotate-center-re 6s linear infinite reverse both;
+  animation: rotate-center-re 6s linear infinite reverse both;
+  -webkit-transform-origin: center center;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.rotate-center-third {
+  -webkit-animation: rotate-center-th 10s linear infinite both;
+  animation: rotate-center-th 10s linear infinite both;
+  -webkit-transform-origin: center center;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.ganeshJee {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 730px;
+  height: 730px;
+  margin-top: -395px;
+  margin-left: -360px;
+}
+
+/* SVG internal styles */
+.st0 { display: none; }
+.st1 { display: inline; }
+.st2 { clip-path: url(#SVGID_2_); fill: #F16F00; }
+.st3 { display: inline; opacity: 0.4; }
+.st4 { fill: #FCC000; }
+.st5 { opacity: 0.8; }
+.st6 { fill: #FED394; }
+.st7 { display: none; opacity: 0.8; }
+.st8 { display: none; fill: #FFE8CC; }
+.st9 { display: none; fill: #FFFFFF; }
+.st10 { display: none; opacity: 0.5; }
+.st11 { display: inline; fill: #FFE8CC; }
+.st12 { fill: #C15E42; }
+.st13 { opacity: 0.3; }
+.st14 { opacity: 0.4; fill: #C15E42; }
+.st15 { opacity: 0.2; }
+.st16 { fill: #FFFFFF; }
+.st17 { fill: #F3A203; }
+.st18 { fill: #FFC44D; }
+.st19 { opacity: 0.3; fill: #FFFFFF; }
+.st20 { display: inline; fill: #C15E42; }
+.st21 { font-family: 'KaushanScript-Regular'; }
+.st22 { font-size: 42.7014px; }
+.st23 { display: inline; fill: #F3A203; }
+.st24 { font-family: 'PlayfairDisplay-Bold'; }
+.st25 { font-size: 13.0421px; }
+.st26 { letter-spacing: 8; }
+
+/* Animations */
+@keyframes rotate-center {
+  0% {
+    -webkit-transform: rotate(0);
+    transform: rotate(0);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+
+@-webkit-keyframes rotate-center {
+  0% { -webkit-transform: rotate(0); transform: rotate(0); }
+  100% { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+}
+
+@keyframes rotate-center-re {
+  0% {
+    -webkit-transform: rotate(0);
+    transform: rotate(0);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+
+@-webkit-keyframes rotate-center-re {
+  0% { -webkit-transform: rotate(0); transform: rotate(0); }
+  100% { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+}
+
+@keyframes rotate-center-th {
+  0% {
+    -webkit-transform: rotate(0);
+    transform: rotate(0);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+
+@-webkit-keyframes rotate-center-th {
+  0% { -webkit-transform: rotate(0); transform: rotate(0); }
+  100% { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media only screen and (max-width: 600px) {
+  svg {
+    width: 750px;
+    left: 0;
+    position: absolute;
+    margin-left: -60%;
+    margin-top: 10%;
+    top: 0;
+  }
+  
+  .divset {
+    height: 400px;
+    width: 400px;
+  }
+  
+  .ganesh-avatar-container {
+    height: 300px;
+  }
+  
+  .img_one, .img_two, .img_three, .ganeshJee {
+    transform: scale(0.6);
+  }
+}
