@@ -9,6 +9,17 @@ interface ChatMessageProps {
 const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLatest }) => {
   const isUser = message.type === 'user';
   const isGanesha = message.type === 'ganesha';
+  const lang = (message.language || 'en').toLowerCase();
+  const fontClass =
+    lang === 'hi' || lang === 'mr'
+      ? 'font-devanagari'
+      : lang === 'ta'
+      ? 'font-tamil'
+      : lang === 'te'
+      ? 'font-telugu'
+      : lang === 'gu'
+      ? 'font-gujarati'
+      : '';
 
   return (
     <div 
@@ -46,6 +57,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLatest }) => {
           <p className={`
             text-sm leading-relaxed
             ${isGanesha ? 'font-medium' : ''}
+            ${fontClass}
           `}>
             {message.content}
           </p>

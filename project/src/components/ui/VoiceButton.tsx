@@ -17,6 +17,7 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({
   disabled = false
 }) => {
   const [ripples, setRipples] = useState<number[]>([]);
+  const [isSmallScreen, setIsSmallScreen] = useState<boolean>(false);
 
   useEffect(() => {
     if (isListening && audioLevel > 0.1) {
@@ -29,8 +30,31 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({
     }
   }, [isListening, audioLevel]);
 
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 640px)');
+    const onChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsSmallScreen('matches' in e ? e.matches : (e as MediaQueryList).matches);
+    };
+    // Initialize
+    onChange(mql as unknown as MediaQueryList);
+    // Listen
+    // @ts-ignore - older Safari types
+    if (mql.addEventListener) mql.addEventListener('change', onChange);
+    // @ts-ignore - fallback
+    else mql.addListener(onChange as any);
+    return () => {
+      // @ts-ignore
+      if (mql.removeEventListener) mql.removeEventListener('change', onChange);
+      else mql.removeListener(onChange as any);
+    };
+  }, []);
+
   const buttonScale = isProcessing ? 0.95 : (isListening ? 1.05 : 1);
   const glowIntensity = isListening ? audioLevel * 20 + 10 : 0;
+  const btnSizeClass = isSmallScreen ? 'w-16 h-16' : 'w-20 h-20';
+  const rippleSize = isSmallScreen ? 96 : 120; // px
+  const waveBase = isSmallScreen ? 112 : 140; // px
+  const waveStep = isSmallScreen ? 24 : 30; // px
 
   return (
     <div className="relative flex items-center justify-center">
@@ -40,8 +64,8 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({
           key={rippleId}
           className="absolute rounded-full border-2 border-saffron-500 animate-ping"
           style={{
-            width: '120px',
-            height: '120px',
+            width: `${rippleSize}px`,
+            height: `${rippleSize}px`,
             animationDuration: '1s'
           }}
         />
@@ -55,8 +79,8 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({
               key={i}
               className="absolute rounded-full border border-saffron-300"
               style={{
-                width: `${140 + i * 30}px`,
-                height: `${140 + i * 30}px`,
+                width: `${waveBase + i * waveStep}px`,
+                height: `${waveBase + i * waveStep}px`,
                 animation: `pulse 2s infinite ${i * 0.3}s`,
                 opacity: audioLevel * (1 - i * 0.2)
               }}
@@ -68,9 +92,9 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({
       {/* Main button */}
       <button
         onClick={onToggleListening}
-        disabled={disabled || isProcessing}
+        disabled={!isListening && (disabled || isProcessing)}
         className={`
-          relative w-20 h-20 rounded-full
+          relative ${btnSizeClass} rounded-full
           bg-gradient-to-br from-saffron-400 to-saffron-600
           border-4 border-gold-400
           flex items-center justify-center

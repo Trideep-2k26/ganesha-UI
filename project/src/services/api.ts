@@ -55,12 +55,15 @@ export async function ttsAPI(params: {
   return await res.blob();
 }
 
-export function playAudioBlob(blob: Blob, onEnded?: () => void) {
+export function playAudioBlob(blob: Blob, opts?: { volume?: number; onEnded?: () => void }) {
   const url = URL.createObjectURL(blob);
   const audio = new Audio(url);
+  if (typeof opts?.volume === 'number') {
+    audio.volume = Math.min(1, Math.max(0, opts.volume));
+  }
   audio.onended = () => {
     URL.revokeObjectURL(url);
-    onEnded && onEnded();
+    opts?.onEnded && opts.onEnded();
   };
   audio.play().catch(() => URL.revokeObjectURL(url));
   return audio; // return element so caller can stop/replace if needed

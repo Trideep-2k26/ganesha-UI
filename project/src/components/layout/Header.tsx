@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Home } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import LanguageSelector from '../ui/LanguageSelector';
 import { SupportedLanguage } from '../../types';
 

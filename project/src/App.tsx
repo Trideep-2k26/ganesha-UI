@@ -1,15 +1,15 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { MessageSquare, Type } from 'lucide-react';
 import Header from './components/layout/Header';
 import GaneshaRotatingAvatar from './components/layout/GaneshaRotatingAvatar';
 import ChatContainer from './components/chat/ChatContainer';
 import VoiceButton from './components/ui/VoiceButton';
-import LanguageSelector from './components/ui/LanguageSelector';
 import ParticleSystem from './components/ui/ParticleSystem';
 import NebulaBackground, { type NebulaBackgroundHandle } from './components/ui/NebulaBackground';
 import useVoiceRecognition from './hooks/useVoiceRecognition';
 import { ChatMessage, SupportedLanguage, UIState } from './types';
 import { chatAPI, ttsAPI, playAudioBlob, type HistoryItem } from './services/api';
+import SettingsPanel, { type Settings } from './components/ui/SettingsPanel';
 
 function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -25,6 +25,28 @@ function App() {
   const [textInput, setTextInput] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
+
+  // User settings (persisted)
+  const [settings, setSettings] = useState<Settings>(() => {
+    try {
+      const raw = localStorage.getItem('ganesha_settings');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {
+      autoTTS: true,
+      ttsRate: 175,
+      ttsVoice: undefined,
+      ttsVolume: 1,
+      temperature: 0.6,
+      keepTextInputOpen: false,
+    };
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('ganesha_settings', JSON.stringify(settings));
+    } catch {}
+  }, [settings]);
 
   // Session id persisted in localStorage for continuity (frontend-managed)
   const [sessionId] = useState<string>(() => {
@@ -56,7 +78,7 @@ function App() {
         language,
         history: buildHistory(8),
         context: { sessionId: sessionId },
-        temperature: 0.6,
+        temperature: settings.temperature,
       });
 
       const ganeshaMessage: ChatMessage = {
@@ -68,13 +90,20 @@ function App() {
       };
       setMessages(prev => [...prev, ganeshaMessage]);
 
-      // Auto TTS playback of assistant reply
-      try {
-        const audioBlob = await ttsAPI({ text: chatRes.text, language });
-        playAudioBlob(audioBlob);
-      } catch (e) {
-        // Non-fatal if TTS fails
-        console.warn('TTS playback failed:', e);
+      // Auto TTS playback of assistant reply (use the language returned by backend)
+      if (settings.autoTTS) {
+        try {
+          const audioBlob = await ttsAPI({ 
+            text: chatRes.text, 
+            language: chatRes.language as SupportedLanguage,
+            rate: settings.ttsRate,
+            voice: settings.ttsVoice,
+          });
+          playAudioBlob(audioBlob, { volume: settings.ttsVolume });
+        } catch (e) {
+          // Non-fatal if TTS fails
+          console.warn('TTS playback failed:', e);
+        }
       }
     } catch (error) {
       console.error('Error sending message to backend:', error);
@@ -121,10 +150,13 @@ function App() {
     };
     
     setMessages(prev => [...prev, userMessage]);
+    // Ensure chat view opens when sending via text input
+    nebulaRef.current?.triggerRipple();
+    if (!started) setStarted(true);
     sendMessageToGanesha(textInput, currentLanguage);
     setTextInput('');
-    setShowTextInput(false);
-  }, [textInput, currentLanguage, sendMessageToGanesha]);
+    if (!settings.keepTextInputOpen) setShowTextInput(false);
+  }, [textInput, currentLanguage, sendMessageToGanesha, started, settings.keepTextInputOpen]);
 
   const bcp47 = useMemo(() => {
     const map: Record<string, string> = {
@@ -186,8 +218,8 @@ function App() {
         
         {/* Chat section - hidden until started (so the white box won't appear initially) */}
         {started && (
-          <div className="max-w-4xl mx-auto w-full px-4 mt-[40vh]">
-            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-gold-200 min-h-[300px] flex flex-col">
+          <div className="max-w-4xl mx-auto w-full px-4 mt-8 md:mt-[40vh]">
+            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-gold-200 min-h-[240px] sm:min-h-[300px] max-h-[50vh] sm:max-h-[60vh] flex flex-col">
               <ChatContainer 
                 messages={messages} 
                 isLoading={uiState.isLoading}
@@ -197,13 +229,21 @@ function App() {
         )}
       </div>
       
+      {/* Settings Panel */}
+      <SettingsPanel 
+        open={uiState.showSettings}
+        settings={settings}
+        onChange={(next) => setSettings(prev => ({ ...prev, ...next }))}
+        onClose={() => setUIState(prev => ({ ...prev, showSettings: false }))}
+      />
+
       {/* Input controls */}
-      <div className="fixed bottom-28 left-1/2 transform -translate-x-1/2 z-20">
+      <div className="fixed bottom-6 md:bottom-28 left-1/2 transform -translate-x-1/2 z-20">
         <div className="flex flex-col items-center space-y-4">
           {/* Text input */}
           {showTextInput && (
             <form onSubmit={handleTextSubmit} className="mb-4">
-              <div className="flex items-center bg-white/95 backdrop-blur-sm rounded-full px-6 py-3 shadow-xl border border-gold-200">
+              <div className="flex items-center bg-white/95 backdrop-blur-sm rounded-full px-6 py-3 shadow-xl border border-gold-200 w-[92vw] sm:w-[80vw] max-w-2xl">
                 <input
                   type="text"
                   value={textInput}
@@ -226,7 +266,11 @@ function App() {
           {/* Control buttons */}
           <div className="flex items-center space-x-6">
             <button
-              onClick={() => setShowTextInput(!showTextInput)}
+              onClick={() => {
+                const next = !showTextInput;
+                setShowTextInput(next);
+                if (next && !started) setStarted(true);
+              }}
               className="
                 p-4 bg-white/90 backdrop-blur-sm rounded-full
                 border border-gold-200 shadow-lg
@@ -244,17 +288,10 @@ function App() {
               isProcessing={voiceState.isProcessing}
               audioLevel={voiceState.audioLevel}
               onToggleListening={handleMicToggle}
-              disabled={uiState.isLoading}
+              disabled={uiState.isLoading && !voiceState.isListening}
             />
           </div>
           
-          {/* Language selector for mobile */}
-          <div className="md:hidden">
-            <LanguageSelector
-              currentLanguage={currentLanguage}
-              onLanguageChange={handleLanguageChange}
-            />
-          </div>
         </div>
       </div>
     </div>
