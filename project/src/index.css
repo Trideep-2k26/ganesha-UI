@@ -138,6 +138,23 @@
   scrollbar-width: none;
 }
 
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent horizontal scroll */
+body {
+  overflow-x: hidden;
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
 /* Focus styles */
 *:focus {
   outline: none;
@@ -185,14 +202,26 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
-  .mobile-optimized {
-    @apply px-4 py-2;
+  /* Ensure proper spacing on mobile */
+  body {
+    overflow-x: hidden;
   }
   
-  .touch-target {
-    @apply min-w-[44px] min-h-[44px];
+  /* Mobile-specific adjustments */
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
   }
 }
+
+@media (max-width: 480px) {
+  /* Smaller text on very small screens */
+  .text-sm {
+    font-size: 0.8rem;
+  }
+}
+
+/* Landscape mobile orientation */
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {

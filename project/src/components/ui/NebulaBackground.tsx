@@ -68,7 +68,17 @@ const NebulaBackground = forwardRef<NebulaBackgroundHandle, NebulaBackgroundProp
     controls.autoRotate = true;
     controls.autoRotateSpeed = 0.1;
 
-    const particleCount = 200000;
+    // Responsive particle density for performance/clarity
+    const viewportW = window.innerWidth;
+    const viewportH = window.innerHeight;
+    const shortSide = Math.min(viewportW, viewportH);
+    let particleCount = 200000; // desktop default
+    if (shortSide <= 480) {
+      particleCount = 80000; // mobile
+    } else if (shortSide <= 768) {
+      particleCount = 120000; // tablet
+    }
+    let currentParticleCount = particleCount;
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
     const randoms = new Float32Array(particleCount);
@@ -82,7 +92,7 @@ const NebulaBackground = forwardRef<NebulaBackgroundHandle, NebulaBackgroundProp
 
     const arms = 5;
     const armSpread = 0.5;
-    const galaxyRadius = 40;
+    const galaxyRadius = shortSide <= 480 ? 30 : shortSide <= 768 ? 35 : 40;
 
     for (let i = 0; i < particleCount; i++) {
       const i3 = i * 3;
@@ -111,12 +121,15 @@ const NebulaBackground = forwardRef<NebulaBackgroundHandle, NebulaBackgroundProp
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
 
+    // Initial responsive point size before resize handler runs
+    const initialPointSize = (shortSide <= 480 ? 2.2 : shortSide <= 768 ? 2.6 : 3.0) * window.devicePixelRatio;
+
     const material = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
         rippleActive: { value: 0.0 },
         rippleTime: { value: 0.0 },
-        uPointSize: { value: 3.0 * window.devicePixelRatio },
+        uPointSize: { value: initialPointSize },
       },
       vertexShader: `
         uniform float time;
@@ -162,7 +175,7 @@ const NebulaBackground = forwardRef<NebulaBackgroundHandle, NebulaBackgroundProp
           nebulaPos.y += snoise(pos.xz * noiseFreq + time * 0.05) * noiseAmp;
           nebulaPos.z += snoise(pos.xy * noiseFreq + time * 0.05) * noiseAmp;
           pos = mix(pos, nebulaPos, morphFactor);
-          float angle = time * 0.05;
+          float angle = -time * 0.05;
           mat2 rotation = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
           pos.xy = rotation * pos.xy;
           if (rippleActive > 0.5) {
@@ -276,7 +289,66 @@ const NebulaBackground = forwardRef<NebulaBackgroundHandle, NebulaBackgroundProp
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
       composer.setSize(width, height);
-      material.uniforms.uPointSize.value = 3.0 * window.devicePixelRatio;
+
+      const shortSideNow = Math.min(width, height);
+      // Adjust point size a bit smaller on small screens
+      const dpr = window.devicePixelRatio;
+      const pointSize = shortSideNow <= 480 ? 2.2 : shortSideNow <= 768 ? 2.6 : 3.0;
+      material.uniforms.uPointSize.value = pointSize * dpr;
+
+      // Recreate geometry if the target particle count changes with viewport
+      let targetCount = 200000;
+      if (shortSideNow <= 480) targetCount = 80000;
+      else if (shortSideNow <= 768) targetCount = 120000;
+
+      if (targetCount !== currentParticleCount) {
+        // Re-generate attributes
+        const positions = new Float32Array(targetCount * 3);
+        const colors = new Float32Array(targetCount * 3);
+        const randoms = new Float32Array(targetCount);
+
+        const arms = 5;
+        const armSpread = 0.5;
+        const galaxyRadius = shortSideNow <= 480 ? 30 : shortSideNow <= 768 ? 35 : 40;
+
+        for (let i = 0; i < targetCount; i++) {
+          const i3 = i * 3;
+          const armIndex = Math.floor(Math.random() * arms);
+          const angle = (armIndex / arms) * Math.PI * 2;
+          const dist = Math.random() * galaxyRadius;
+          const armAngle = dist * 0.15;
+          const spiralAngle = angle + armAngle + (Math.random() - 0.5) * armSpread;
+          const randomHeight = (Math.random() - 0.5) * 5 * (1 - dist / galaxyRadius);
+
+          positions[i3] = Math.cos(spiralAngle) * dist;
+          positions[i3 + 1] = Math.sin(spiralAngle) * dist;
+          positions[i3 + 2] = randomHeight;
+
+          const colorPalette = [
+            new THREE.Color('#ff4800'),
+            new THREE.Color('#ff8c00'),
+            new THREE.Color('#ffd700'),
+            new THREE.Color('#dc2626')
+          ];
+          const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+          const lightness = 0.7 + Math.random() * 0.3;
+          colors[i3] = color.r * lightness;
+          colors[i3 + 1] = color.g * lightness;
+          colors[i3 + 2] = color.b * lightness;
+
+          randoms[i] = Math.random() * 10.0;
+        }
+
+        const newGeometry = new THREE.BufferGeometry();
+        newGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        newGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        newGeometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
+
+        // Swap geometry on the existing points
+        particles.geometry.dispose();
+        particles.geometry = newGeometry;
+        currentParticleCount = targetCount;
+      }
     };
 
     window.addEventListener('resize', onResize);

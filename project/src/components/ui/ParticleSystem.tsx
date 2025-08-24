@@ -21,6 +21,15 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ active, intensity = 1 }
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const animationFrameRef = useRef<number>();
+  const configRef = useRef({
+    maxParticles: 50 * intensity,
+    spawnProb: 0.02 * intensity,
+    sizeMul: 1,
+    speedXMul: 1,
+    speedYMul: 1,
+  });
+  const dprRef = useRef(1);
+  const cssSizeRef = useRef({ width: 0, height: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -30,8 +39,47 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ active, intensity = 1 }
     if (!ctx) return;
 
     const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const cssW = window.innerWidth;
+      const cssH = window.innerHeight;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      dprRef.current = dpr;
+
+      // DPI-aware canvas sizing
+      canvas.style.width = cssW + 'px';
+      canvas.style.height = cssH + 'px';
+      canvas.width = Math.floor(cssW * dpr);
+      canvas.height = Math.floor(cssH * dpr);
+      // Draw using CSS pixel coordinates
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cssSizeRef.current = { width: cssW, height: cssH };
+
+      // Responsive particle behavior
+      const shortSide = Math.min(cssW, cssH);
+      if (shortSide <= 480) {
+        configRef.current = {
+          maxParticles: 30 * intensity,
+          spawnProb: 0.015 * intensity,
+          sizeMul: 0.85,
+          speedXMul: 0.85,
+          speedYMul: 0.9,
+        };
+      } else if (shortSide <= 768) {
+        configRef.current = {
+          maxParticles: 40 * intensity,
+          spawnProb: 0.018 * intensity,
+          sizeMul: 0.9,
+          speedXMul: 0.9,
+          speedYMul: 0.95,
+        };
+      } else {
+        configRef.current = {
+          maxParticles: 60 * intensity,
+          spawnProb: 0.02 * intensity,
+          sizeMul: 1,
+          speedXMul: 1,
+          speedYMul: 1,
+        };
+      }
     };
 
     resizeCanvas();
@@ -39,22 +87,25 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ active, intensity = 1 }
 
     const createParticle = (): Particle => {
       const types = ['om', 'spark', 'lotus'] as const;
+      const cfg = configRef.current;
+      const { width, height } = cssSizeRef.current;
       return {
-        x: Math.random() * canvas.width,
-        y: canvas.height + 20,
-        vx: (Math.random() - 0.5) * 2,
-        vy: -Math.random() * 3 - 1,
+        x: Math.random() * width,
+        y: height + 20,
+        vx: (Math.random() - 0.5) * 2 * cfg.speedXMul,
+        vy: (-Math.random() * 3 - 1) * cfg.speedYMul,
         life: 0,
         maxLife: Math.random() * 180 + 120,
-        size: Math.random() * 4 + 2,
+        size: (Math.random() * 4 + 2) * cfg.sizeMul,
         alpha: 0,
         type: types[Math.floor(Math.random() * types.length)]
       };
     };
 
     const updateParticles = () => {
-      if (active && particlesRef.current.length < 50 * intensity) {
-        if (Math.random() < 0.02 * intensity) {
+      const cfg = configRef.current;
+      if (active && particlesRef.current.length < cfg.maxParticles) {
+        if (Math.random() < cfg.spawnProb) {
           particlesRef.current.push(createParticle());
         }
       }
@@ -115,7 +166,8 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ active, intensity = 1 }
     };
 
     const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const { width, height } = cssSizeRef.current;
+      ctx.clearRect(0, 0, width, height);
       
       updateParticles();
       

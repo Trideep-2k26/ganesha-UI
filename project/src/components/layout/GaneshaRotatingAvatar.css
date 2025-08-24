@@ -158,26 +158,91 @@
 }
 
 /* Responsive design */
-@media only screen and (max-width: 600px) {
-  svg {
-    width: 750px;
-    left: 0;
-    position: absolute;
-    margin-left: -60%;
-    margin-top: 10%;
-    top: 0;
-  }
-  
-  .divset {
-    height: 400px;
-    width: 400px;
-  }
-  
+@media (max-width: 768px) {
   .ganesh-avatar-container {
-    height: 300px;
+    height: 280px;
+    margin: 1rem 0;
   }
-  
-  .img_one, .img_two, .img_three, .ganeshJee {
-    transform: scale(0.6);
+
+  .divset {
+    height: 360px;
+    width: 360px;
+    margin: 0 auto;
+  }
+
+  /* Center via dimensions + negative margins to preserve rotate animations */
+  .img_one {
+    top: 50%;
+    left: 50%;
+    width: 320px;
+    height: 320px;
+    margin-left: -160px;
+    margin-top: -160px;
+  }
+
+  .img_two {
+    top: 50%;
+    left: 50%;
+    width: 260px;
+    height: 260px;
+    margin-left: -130px;
+    margin-top: -130px;
+  }
+
+  .img_three {
+    top: 50%;
+    left: 50%;
+    width: 240px;
+    height: 240px;
+    margin-left: -120px;
+    margin-top: -120px;
+  }
+
+  .ganeshJee {
+    top: 50%;
+    left: 50%;
+    width: 340px;
+    height: 340px;
+    margin-left: -170px;
+    margin-top: -170px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ganesh-avatar-container {
+    height: 220px;
+  }
+
+  .divset {
+    height: 300px;
+    width: 300px;
+  }
+
+  .img_one {
+    width: 260px;
+    height: 260px;
+    margin-left: -130px;
+    margin-top: -130px;
+  }
+
+  .img_two {
+    width: 210px;
+    height: 210px;
+    margin-left: -105px;
+    margin-top: -105px;
+  }
+
+  .img_three {
+    width: 190px;
+    height: 190px;
+    margin-left: -95px;
+    margin-top: -95px;
+  }
+
+  .ganeshJee {
+    width: 280px;
+    height: 280px;
+    margin-left: -140px;
+    margin-top: -140px;
   }
 }
