@@ -1,0 +1,13 @@
+[build]
+  base = "ganesha-UI/project"
+  command = "npm ci && npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA fallback for React Router (optional but recommended)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
