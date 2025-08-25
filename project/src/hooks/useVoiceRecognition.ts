@@ -75,6 +75,9 @@ const useVoiceRecognition = (
   const analyserRef = useRef<AnalyserNode | null>(null);
   const microphoneRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const shouldRestartRef = useRef<boolean>(false);
+  const restartTimeoutRef = useRef<number | null>(null);
+  const analysisSetupDoneRef = useRef<boolean>(false);
 
   const updateAudioLevel = useCallback(() => {
     if (!analyserRef.current) return;
@@ -123,6 +126,7 @@ const useVoiceRecognition = (
       microphoneRef.current.connect(analyserRef.current);
       
       updateAudioLevel();
+      analysisSetupDoneRef.current = true;
     } catch (error) {
       console.error('Error setting up audio analysis:', error);
       if (error instanceof DOMException) {
@@ -141,6 +145,9 @@ const useVoiceRecognition = (
       return;
     }
 
+    // Mark that we want to keep recognition alive until explicitly stopped
+    shouldRestartRef.current = true;
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     recognitionRef.current = new SpeechRecognition();
     
@@ -156,7 +163,13 @@ const useVoiceRecognition = (
         isListening: true,
         isProcessing: false
       }));
-      setupAudioAnalysis();
+      // Only set up audio analysis once per session; keep it alive across restarts
+      if (!analysisSetupDoneRef.current) {
+        setupAudioAnalysis();
+      } else if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+        // Mobile Safari may suspend the context; resume it on user gesture
+        audioContextRef.current.resume().catch(() => {});
+      }
     };
 
     recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
@@ -179,38 +192,67 @@ const useVoiceRecognition = (
     };
 
     recognitionRef.current.onend = () => {
+      // Auto-restart on mobile if recognition stops unexpectedly
+      if (shouldRestartRef.current) {
+        // Keep UI in listening state and re-start after a short delay
+        setVoiceState(prev => ({ ...prev, isListening: true, isProcessing: false }));
+        if (restartTimeoutRef.current) window.clearTimeout(restartTimeoutRef.current);
+        restartTimeoutRef.current = window.setTimeout(() => {
+          try { recognitionRef.current?.start(); } catch {}
+        }, 300);
+        return;
+      }
+
+      // Full cleanup only when explicitly stopped by user
       setVoiceState(prev => ({
         ...prev,
         isListening: false,
         isProcessing: false,
         audioLevel: 0
       }));
-      
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      
       if (audioContextRef.current) {
         audioContextRef.current.close();
       }
+      analysisSetupDoneRef.current = false;
     };
 
     recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
       console.error('Speech recognition error:', event.error);
-      setVoiceState(prev => ({
-        ...prev,
-        isListening: false,
-        isProcessing: false,
-        audioLevel: 0
-      }));
+      // Common transient errors on mobile: 'no-speech', 'network', 'audio-capture'
+      if (shouldRestartRef.current && event.error !== 'aborted') {
+        if (restartTimeoutRef.current) window.clearTimeout(restartTimeoutRef.current);
+        restartTimeoutRef.current = window.setTimeout(() => {
+          try { recognitionRef.current?.start(); } catch {}
+        }, 500);
+        return;
+      }
+
+      // Otherwise, treat as stopped
+      setVoiceState(prev => ({ ...prev, isListening: false, isProcessing: false, audioLevel: 0 }));
     };
 
-    recognitionRef.current.start();
+    try {
+      recognitionRef.current.start();
+    } catch {
+      // Sometimes start can throw InvalidStateError; retry shortly
+      restartTimeoutRef.current = window.setTimeout(() => {
+        try { recognitionRef.current?.start(); } catch {}
+      }, 200);
+    }
   }, [language, onTranscript, setupAudioAnalysis, updateAudioLevel]);
 
   const stopListening = useCallback(() => {
+    // Signal that we no longer want to auto-restart
+    shouldRestartRef.current = false;
+    if (restartTimeoutRef.current) {
+      window.clearTimeout(restartTimeoutRef.current);
+      restartTimeoutRef.current = null;
+    }
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try { recognitionRef.current.stop(); } catch {}
     }
   }, []);
 
