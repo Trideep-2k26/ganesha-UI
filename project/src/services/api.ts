@@ -1,6 +1,6 @@
 export type HistoryItem = { role: 'user' | 'assistant'; content: string };
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://huntington-assume-brain-kazakhstan.trycloudflare.com';
 
 export async function chatAPI(params: {
   text: string;
