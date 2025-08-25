@@ -25,6 +25,8 @@ function App() {
   const [textInput, setTextInput] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showMobileNotice, setShowMobileNotice] = useState(true);
 
   // User settings (persisted)
   const [settings, setSettings] = useState<Settings>(() => {
@@ -34,7 +36,7 @@ function App() {
     } catch {}
     return {
       autoTTS: true,
-      ttsRate: 175,
+      ttsRate: 195,
       ttsVoice: undefined,
       ttsVolume: 1,
       temperature: 0.6,
@@ -47,6 +49,17 @@ function App() {
       localStorage.setItem('ganesha_settings', JSON.stringify(settings));
     } catch {}
   }, [settings]);
+
+  // Mobile detection (client-side)
+  useEffect(() => {
+    try {
+      const ua = navigator.userAgent || (navigator as any).vendor || (window as any).opera || '';
+      const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+      setIsMobile(mobile);
+    } catch {
+      setIsMobile(false);
+    }
+  }, []);
 
   // Session id persisted in localStorage for continuity (frontend-managed)
   const [sessionId] = useState<string>(() => {
@@ -236,6 +249,35 @@ function App() {
         onChange={(next) => setSettings(prev => ({ ...prev, ...next }))}
         onClose={() => setUIState(prev => ({ ...prev, showSettings: false }))}
       />
+
+      {/* Mobile microphone advisory */}
+      {isMobile && showMobileNotice && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-30 w-[92vw] sm:w-[80vw] max-w-2xl">
+          <div className="bg-yellow-100/95 text-gray-800 border border-yellow-300 rounded-xl px-4 py-3 shadow-lg flex items-start justify-between space-x-3">
+            <p className="text-sm">
+              Mobile browsers have limited and inconsistent microphone support. For voice input, please use a desktop. On mobile, use the text input instead.
+            </p>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => {
+                  setShowTextInput(true);
+                  if (!started) setStarted(true);
+                }}
+                className="px-3 py-1.5 text-sm rounded-md bg-white text-gray-800 border border-yellow-300 hover:bg-yellow-50 transition"
+              >
+                Use text
+              </button>
+              <button
+                onClick={() => setShowMobileNotice(false)}
+                className="px-3 py-1.5 text-sm rounded-md bg-yellow-200 text-gray-800 border border-yellow-300 hover:bg-yellow-300 transition"
+                aria-label="Dismiss mobile advisory"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Input controls */}
       <div className="fixed bottom-6 md:bottom-28 left-1/2 transform -translate-x-1/2 z-20">

@@ -14,7 +14,16 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    host: true,
     port: 3000,
-    open: true
+    open: true,
+    cors: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   }
 });
