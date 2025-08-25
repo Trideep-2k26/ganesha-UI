@@ -111,7 +111,7 @@ function App() {
       const errorMessage: ChatMessage = {
         id: Date.now().toString() + '-error',
         type: 'ganesha',
-        content: '🙏 Sorry, the connection is busy. Please try again shortly.',
+        content: 'Mere bacche, abhi connection mein thodi pareshani hai. Kripya thoda intezaar karke phir se koshish kariye.',
         timestamp: new Date(),
         language: 'en',
       };
