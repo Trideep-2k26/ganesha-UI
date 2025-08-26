@@ -8,6 +8,7 @@ pyttsx3>=2.90
 pytest>=8.3.2
 httpx>=0.27.2
 aiofiles>=23.2.1
+python-multipart>=0.0.9
 
 # Optional high-quality Indian TTS provider
 edge-tts>=7.2.0
