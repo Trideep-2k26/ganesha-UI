@@ -7,6 +7,7 @@ This **monorepo** contains both **backend (FastAPI)** and **frontend (React + Vi
 > ⚠️ **Note:** All features and implementation are currently available in the **`feat` branch**, not in the `main` branch.
 
 ---
+🚀 **[▶️ Watch the Demo Video](https://trideep1315.sirv.com/Divine%20Conversation%20-%20Lord%20Ganesha%20Chatbot%20-%20Google%20Chrome%202025-08-26%2015-39-01.mp4)** 🚀
 
 ## 🚀 Features
 
@@ -53,9 +54,9 @@ This **monorepo** contains both **backend (FastAPI)** and **frontend (React + Vi
 
 * **FastAPI** – API framework
 * **Uvicorn** – ASGI server
-* **LLMs** – Mistral (`mistral-medium-latest`), OpenAI (`gpt-4o`)
+* **LLMs** – Mistral (`mistral-small-latest`)
 * **TTS** – edge-tts (default, MP3), pyttsx3 (offline, WAV)
-* **STT** – placeholder, extensible to Whisper / Azure / GCP
+* **STT** – placeholder, extensible to Whisper
 * **Pytest** – backend testing
 
 ### Frontend
@@ -80,7 +81,7 @@ pip install -r backend/requirements.txt
 @'
 LLM_PROVIDER=mistral
 MISTRAL_API_KEY=YOUR_KEY
-MISTRAL_MODEL=mistral-medium-latest
+MISTRAL_MODEL=mistral-small-latest
 
 
 TTS_PROVIDER=edge-tts
@@ -100,13 +101,13 @@ Visit: **[http://ganesh-backend-copy-production.up.railway.app](http://ganesh-ba
 
 ```powershell
 # Install dependencies
-npm i --prefix project
+npm install
 
 # Create .env
 @"VITE_API_BASE=http://127.0.0.1:8000"@ | Out-File -Encoding utf8 project/.env
 
 # Start dev server
-npm run dev --prefix project
+npm run dev 
 ```
 
 Visit: **[https://ganeshabot.netlify.app](https://ganeshabot.netlify.app)**
@@ -201,7 +202,7 @@ Visit: **[https://ganeshabot.netlify.app](https://ganeshabot.netlify.app)**
 * **LLM client:** (`services/llm_client.py`)
 
   * Env provider: `LLM_PROVIDER=mistral|openai`.
-  * Supports Mistral (`MISTRAL_API_KEY`, `MISTRAL_MODEL`) and OpenAI (`OPENAI_API_KEY`, `OPENAI_MODEL`).
+  * Supports Mistral (`MISTRAL_API_KEY`, `MISTRAL_MODEL`).
   * Uses `requests.Session` with retry policy and timeouts.
 
 * **TTS engine:** (`services/tts_engine.py`)
