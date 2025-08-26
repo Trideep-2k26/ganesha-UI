@@ -1,6 +1,6 @@
 export type HistoryItem = { role: 'user' | 'assistant'; content: string };
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://assuming-differently-administrators-dealt.trycloudflare.com';
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://ganesh-backend-copy-production.up.railway.app';
 
 export async function chatAPI(params: {
   text: string;
