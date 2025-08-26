@@ -266,6 +266,3 @@ pytest backend/tests -q
 
 ---
 
-## 📜 License
-
-MIT (or your preferred license).
